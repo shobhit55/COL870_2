@@ -5,10 +5,10 @@ import numpy as np
 def train_rrn(model, train_loader, class_model, device=torch.device('cuda')):
     print("RRN Training Started...")
     wd = 1e-4
-    epochs = 30
+    epochs = 53
     lr = 2e-4
     optim_key = 'Adam'
-    optimizer_dict = { "AdaDel": torch.optim.Adadelta(model.parameters(), weight_decay=wd), "Adam": torch.optim.Adam(model.parameters(), lr = lr, weight_decay = wd), "SGD": torch.optim.SGD(model.parameters(), lr = lr, weight_decay=wd) }
+    optimizer_dict = {"AdaDel": torch.optim.Adadelta(model.parameters(), weight_decay=wd), "Adam": torch.optim.Adam(model.parameters(), lr = lr, weight_decay = wd), "SGD": torch.optim.SGD(model.parameters(), lr = lr, weight_decay=wd)}
     optimizer = optimizer_dict[optim_key]
     if device==torch.device('cuda'):
         torch.cuda.synchronize()
@@ -30,7 +30,7 @@ def train_rrn(model, train_loader, class_model, device=torch.device('cuda')):
     return  model
 
 def train_classifier(model, train_loader, optim_key, device=torch.device('cuda')):
-    epochs = 60
+    epochs = 7
     lr = 0.001
     lr_ad = 0.005
     wd = 5e-4
@@ -46,7 +46,7 @@ def train_classifier(model, train_loader, optim_key, device=torch.device('cuda')
         for batch, (input, target) in enumerate(train_loader):
             input, target = input.to(device), target.to(device) 
             optimizer.zero_grad()
-            output = model(input) #.to(device)
+            output = model(input)
             loss = criterion(output, target)
             loss.backward()
             optimizer.step()
@@ -75,7 +75,6 @@ def test_rrn(model, class_model, test_loader, output_file, device=torch.device('
                 return 0
             if sum(grid[:,i])!=sum(set(grid[:,i])):
                 return 0
-            # pdb.set_trace()
             if np.sum(grid[int(i/2)*2:int(i/2)*2+2, (i%2)*4:(i%2)*4+4])!=sum(list(set(grid[int(i/2)*2:int(i/2)*2+2, (i%2)*4:(i%2)*4+4].flatten()))):
                 return 0
         return 1

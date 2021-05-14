@@ -1,6 +1,6 @@
 from models import RRN, Resnet, BasicBlockBN
-from datasets import sudoku_char_data, sudoku_data_8, sudoku_data_train
-from train_loops import train_classifier, train_rrn
+from datasets import sudoku_char_data, sudoku_data_8, sudoku_data_train, sudoku_data_8_test
+from train_loops import train_classifier, train_rrn, test_rrn
 import numpy as np
 import torch
 import torch.nn as nn
@@ -105,10 +105,13 @@ grid_size = 8
 batch_size = 64
 class_model.eval()
 train_data = sudoku_data_8(train_data_dir+'/query', train_data_dir+'/target', typ='train')
-train_loader = DataLoader(train_data, batch_size=batch_size, num_workers=2 if device==torch.device('cuda') else 0, pin_memory=False)
+test_data = sudoku_data_8_test(test_data_dir)
+train_loader = DataLoader(train_data, batch_size=batch_size, num_workers=2 if device==torch.device('cuda') else 0)
+test_loader = DataLoader(test_data, batch_size=batch_size, num_workers=2 if device==torch.device('cuda') else 0)
 
 del sudoku_digits_data
 gc.collect()
 torch.cuda.empty_cache()
 model = RRN(hidden_dim=96, embed_size=16, n_steps=32, grid_size=grid_size).to(device)
 model = train_rrn(model, train_loader, class_model, device=device)
+test_rrn(model, class_model, test_loader, output_file, device=device)
