@@ -132,8 +132,8 @@ class BasicBlockBN(nn.Module):
         self.conv1 = nn.Conv2d(input_dim, output_dim, kernel_size=3, stride=stride, padding=1, bias = False)
         self.conv2 = nn.Conv2d(output_dim, output_dim, kernel_size=3, stride=1, padding=1, bias = False)
         self.norm_layer = norm_layer
-        self.bn1 = nn.BatchNorm2d(output_dim)
-        self.bn2 = nn.BatchNorm2d(output_dim)
+        self.bn1 = nn.BatchNorm2d(output_dim) #.to(device)
+        self.bn2 = nn.BatchNorm2d(output_dim) #.to(device)    
         self.relu = nn.ReLU()
         self.identity_downsample = identity_downsample
         self.init_weights()
@@ -146,14 +146,14 @@ class BasicBlockBN(nn.Module):
           nn.init.kaiming_uniform_(m.weight)
       
     def forward(self, x):
-        input = x
+        input = x #.to(device)
         x = self.conv1(x)
-        x = self.bn1(x)
+        x = self.bn1(x) #.to(device)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.bn2(x)
+        x = self.bn2(x) #.to(device)
         if self.identity_downsample is not None:
-            input = self.identity_downsample(input)
+            input = self.identity_downsample(input) #.to(device)
         x = x + input
         x = self.relu(x)
         return x
@@ -174,21 +174,21 @@ class Resnet(nn.Module):
         self.fea = None
 
     def layer(self, input_dim, output_dim, block, num_blocks, stride=2):
-        bn = nn.BatchNorm2d(output_dim)#.to(device)
+        bn = nn.BatchNorm2d(output_dim) #.to(device)
         if stride!=1:
           cov = nn.Conv2d(input_dim, output_dim, kernel_size=1, stride=2, bias =False)
           nn.init.kaiming_uniform_(cov.weight)
           identity_downsample_1 = nn.Sequential(
                                                     cov,
                                                     bn
-                                                  )#.to(device)
+                                                  ) #.to(device)
         else:
             identity_downsample_1 = None
 
         layers = []
-        layers.append(block(input_dim, output_dim, identity_downsample_1, stride, norm_layer = self.norm_layer ))#.to(device)) #increases channels and downsamples feature map
+        layers.append(block(input_dim, output_dim, identity_downsample_1, stride, norm_layer = self.norm_layer )) #.to(device)) #increases channels and downsamples feature map
         for i in range(num_blocks-1):
-            layers.append(block(output_dim, output_dim, norm_layer = self.norm_layer))#.to(device))
+            layers.append(block(output_dim, output_dim, norm_layer = self.norm_layer)) #.to(device))
         return nn.Sequential(*layers)
 
     def init_weights(self):
@@ -206,16 +206,6 @@ class Resnet(nn.Module):
     def get_fea(self):
       return self.fea
 
-    def sudoku_check(grid):
-        for i in range(8):
-            if sum(grid[i])!=sum(set(grid[i])):
-                return 1
-            if sum(grid[:,i])!=sum(set(grid[:,i])):
-                return 1
-            if sum(grid[int(i/2)*2:int(i/2)*2+1, (i%2)*4:(i%2)*4+4])!=sum(set(grid[int(i/2)*2:int(i/2)*2+1, (i%2)*4:(i%2)*4+4])):
-                return 1
-        return 0
-
     def forward(self, x, typ='sudoku'): #batch, 64, 1, 28, 28
         if typ == 'sudoku':
             x = x.view(-1, 1, 28, 28)
@@ -225,10 +215,8 @@ class Resnet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        x = self.pool_out(x)#.to(device)
+        x = self.pool_out(x) #.to(device)
         x = x.view(-1,64)
         self.fea = x.clone().detach().cpu()
         x = self.fc_out_layer(x)
-
-        x_ad = x.view(-1, 64, )
         return x

@@ -26,6 +26,7 @@ test_data_dir = args.test_data_dir
 sample_file = args.sample_file
 
 #Clustering
+print('Clustering started')
 num_clusters = 8
 dataset = sudoku_char_data(train_data_dir+'/target')
 true_x = torch.tensor(np.load(sample_file), dtype=torch.float32)
@@ -51,6 +52,7 @@ for i, x in enumerate(dataloader):
         k = k+len(x)
     except:
         print('continued')
+    break
 x_all_0 = x_all_0[:k]
 labels_all_0 = labels_all_0[:k]
 
@@ -89,14 +91,18 @@ labels_all_0 = np.concatenate((labels_all_0, labels_0))
 labels_all_0 = np.expand_dims(labels_all_0, 1)
 sudoku_digits_data = np.concatenate((labels_all_0, x_all_0), axis=1)
 np.random.shuffle(sudoku_digits_data)
+print('Clustering done...')
 
 #Classifier------------------------------------------------------------------------------------------------------------
 optim_key = 'SGD'
 train_data = sudoku_data_train(sudoku_digits_data, transform=transforms.ToTensor())
 train_loader = DataLoader(train_data, batch_size=1024, num_workers=0 if device==torch.device('cpu') else 2, shuffle=True, drop_last=True)
 
+del sudoku_digits_data
+gc.collect()
 torch.cuda.empty_cache()
 class_model = Resnet(BasicBlockBN, n_layers=1, num_classes=9, input_dim=1).to(device)
+print('resnet defined')
 class_model = train_classifier(class_model, train_loader, optim_key=optim_key, device=device)
 
 #RRN------------------------------------------------------------------------------------------------------------
@@ -109,8 +115,6 @@ test_data = sudoku_data_8_test(test_data_dir)
 train_loader = DataLoader(train_data, batch_size=batch_size, num_workers=2 if device==torch.device('cuda') else 0)
 test_loader = DataLoader(test_data, batch_size=batch_size, num_workers=2 if device==torch.device('cuda') else 0)
 
-del sudoku_digits_data
-gc.collect()
 torch.cuda.empty_cache()
 model = RRN(hidden_dim=96, embed_size=16, n_steps=32, grid_size=grid_size).to(device)
 model = train_rrn(model, train_loader, class_model, device=device)
