@@ -1,14 +1,10 @@
 from models import RRN, Resnet, BasicBlockBN
-from datasets import sudoku_char_data, sudoku_data_8, sudoku_data_train, sudoku_data_8_test
+from datasets import sudoku_data_8, sudoku_data_train, sudoku_data_8_test
 from train_loops import train_classifier, train_rrn, test_rrn, clustering
-import numpy as np
 import torch
-import torch.nn as nn
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
-from scipy.spatial import distance
+
 import gc
 import argparse
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
